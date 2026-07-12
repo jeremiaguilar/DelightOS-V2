@@ -1,0 +1,30 @@
+const fs = require('fs');
+let code = fs.readFileSync('src/components/POSView.tsx', 'utf8');
+
+// The line after the header:
+//         {/* Categories Tab Scroll */}
+code = code.replace(
+  '        {/* Categories Tab Scroll */}',
+  '        {posMode === \'error\' ? (\n          <div className="flex-1 overflow-y-auto bg-white rounded-2xl border border-delight-gray/10 p-6 flex flex-col">\n             <h3 className="text-lg font-black text-delight-dark uppercase mb-4">Cancelar Ticket</h3>\n             <div className="flex gap-4 mb-6">\n               <input \n                 type="text" \n                 placeholder="Buscar por Folio (ej. DL-1001)..."\n                 className="flex-1 bg-gray-50 border border-delight-gray/10 rounded-xl px-4 py-3 font-semibold outline-none focus:border-delight-green/40"\n                 value={ticketSearchQuery}\n                 onChange={(e) => setTicketSearchQuery(e.target.value)}\n               />\n             </div>\n             <div className="flex-1 overflow-y-auto">\n               {orders.filter(o => o.status !== \'cancelado\' && o.ticketNumber.toLowerCase().includes(ticketSearchQuery.toLowerCase())).slice(0, 10).map(order => (\n                 <div key={order.id} className="border border-delight-gray/10 p-4 rounded-xl mb-3 flex justify-between items-center bg-gray-50/50 hover:bg-white transition-colors">\n                   <div>\n                     <div className="font-bold text-delight-dark flex items-center gap-2">\n                       Folio: {order.ticketNumber}\n                       {order.status === \'solicitado_cancelacion\' && <span className="text-[10px] bg-red-100 text-red-600 px-2 py-0.5 rounded-full uppercase">Pendiente</span>}\n                     </div>\n                     <div className="text-xs text-delight-gray">{new Date(order.createdAt).toLocaleString()}</div>\n                     <div className="text-xs font-semibold text-delight-green mt-1">${order.total.toFixed(2)}</div>\n                   </div>\n                   <button \n                     onClick={() => { setSelectedTicketForCancel(order); setCancelReason(\'\'); }}\n                     className="px-4 py-2 bg-white border border-red-200 text-red-500 rounded-lg text-xs font-bold hover:bg-red-50"\n                   >\n                     Seleccionar\n                   </button>\n                 </div>\n               ))}\n               {orders.length === 0 && <p className="text-xs text-delight-gray text-center mt-10">No hay tickets recientes.</p>}\n             </div>\n          </div>\n        ) : (\n          <>\n        {/* Categories Tab Scroll */}'
+);
+
+// We need to close the `</>` before the end of the `col-span-8` div. Let's find the end of `filteredProducts.length === 0`.
+// It's probably at `            </div>\n          )\n        }`
+code = code.replace(
+  '            </div>\n          )\n        }\n      </div>',
+  '            </div>\n          )\n        }\n          </>\n        )\n      }\n      </div>'
+);
+
+// Also wrap the Cart column (col-span-4)
+code = code.replace(
+  '      {/* Cart & Pay Pane (Right 4 columns) */}',
+  '      {/* Cart & Pay Pane (Right 4 columns) */}\n      {posMode !== \'error\' ? ('
+);
+
+// And close it at the very end before the modal check
+code = code.replace(
+  '        </div>\n      </div>\n\n      {/* Item Modifiers Modal */}',
+  '        </div>\n      </div>\n      ) : (\n        <div className="col-span-4 bg-white rounded-[2rem] shadow-xl border border-delight-gray/10 flex flex-col overflow-hidden p-6">\n          {selectedTicketForCancel ? (\n            <div className="flex flex-col h-full">\n              <h4 className="font-black text-delight-dark uppercase mb-4 text-sm">Motivo de Cancelación</h4>\n              <div className="text-xs mb-4 text-delight-gray bg-gray-50 p-3 rounded-xl">\n                <strong>Folio:</strong> {selectedTicketForCancel.ticketNumber}<br/>\n                <strong>Total:</strong> ${selectedTicketForCancel.total.toFixed(2)}\n              </div>\n              <textarea \n                value={cancelReason}\n                onChange={(e) => setCancelReason(e.target.value)}\n                className="w-full flex-1 bg-red-50/50 border border-red-100 rounded-xl p-4 text-sm font-semibold outline-none resize-none"\n                placeholder="Escribe el motivo..."\n              />\n              <button\n                onClick={() => {\n                   if (!cancelReason.trim()) { alert("Escribe un motivo"); return; }\n                   if (currentUser.role === "admin") {\n                     // cancel directly\n                     const updated = orders.map(o => o.id === selectedTicketForCancel.id ? { ...o, status: \'cancelado\', cancellationReason: cancelReason } : o);\n                     setOrdersState(updated as any);\n                     alert("Cancelado");\n                     setSelectedTicketForCancel(null);\n                   } else {\n                     // Send to review\n                     const updated = orders.map(o => o.id === selectedTicketForCancel.id ? { ...o, status: \'solicitado_cancelacion\', cancellationReason: cancelReason } : o);\n                     setOrdersState(updated as any);\n                     alert("Enviado a revisión del Administrador");\n                     setSelectedTicketForCancel(null);\n                   }\n                }}\n                className="w-full mt-4 py-4 bg-red-500 text-white rounded-xl font-black uppercase shadow-lg shadow-red-500/20"\n              >\n                {currentUser.role === "admin" ? "Cancelar Ticket" : "Solicitar Cancelación"}\n              </button>\n            </div>\n          ) : (\n            <div className="flex-1 flex items-center justify-center text-delight-gray text-xs text-center">\n              Selecciona un ticket a la izquierda para continuar.\n            </div>\n          )}\n        </div>\n      )}\n\n      {/* Item Modifiers Modal */}'
+);
+
+fs.writeFileSync('src/components/POSView.tsx', code);

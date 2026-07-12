@@ -1,0 +1,6 @@
+{
+  "name": "DelightOS",
+  "description": "Sistema de Punto de Venta (POS) y Cocina (KDS) para el negocio de alimentos y bebidas Delight Frappés & Drinks.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

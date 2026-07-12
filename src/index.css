@@ -1,0 +1,72 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  /* Brand Colors */
+  --color-delight-green: #8DC63F;
+  --color-delight-green-hover: #7db135;
+  --color-delight-yellow: #F2C230;
+  --color-delight-yellow-hover: #e0b126;
+  --color-delight-bg: #FFFDF8;
+  --color-delight-dark: #1E2512;
+  --color-delight-gray: #4A5538;
+}
+
+/* Custom Utilities or global overrides */
+body {
+  background-color: var(--color-delight-bg);
+  font-family: var(--font-sans);
+  color: var(--color-delight-dark);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Glassmorphism / Liquid Glass Styles */
+.liquid-glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 8px 32px 0 rgba(141, 198, 63, 0.04);
+}
+
+.liquid-glass-hover {
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.liquid-glass-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 38px 0 rgba(141, 198, 63, 0.08);
+  border-color: rgba(141, 198, 63, 0.2);
+}
+
+.liquid-glass-green {
+  background: rgba(141, 198, 63, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(141, 198, 63, 0.15);
+}
+
+.liquid-glass-yellow {
+  background: rgba(242, 194, 48, 0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(242, 194, 48, 0.15);
+}
+
+/* Soft Apple-style Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(141, 198, 63, 0.2);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(141, 198, 63, 0.4);
+}
