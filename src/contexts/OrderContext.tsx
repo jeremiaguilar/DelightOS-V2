@@ -3,7 +3,7 @@ import { Order, Product, Reward, ProductCategory } from '../types';
 import { saveProductToSupabase, saveOrderToSupabase } from '../lib/supabaseService';
 import { saveCachedProduct, saveCachedOrder } from '../lib/indexedDB';
 import { useSystemContext } from './SystemContext';
-import { enrichProductsWithRewards, getProductRewardConfigs, saveProductRewardConfigs, getDefaultRewardPointsForProduct } from '../App';
+import { enrichProductsWithRewards, getProductRewardConfigs, saveProductRewardConfigs, getDefaultRewardPointsForProduct } from '../utils/rewardConfig';
 import { orderService } from '../services/orderService';
 import { inventoryService } from '../services/inventoryService';
 import { clubService } from '../services/clubService';
@@ -52,13 +52,10 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [products]);
 
   const orderCompleted = async (newOrder: Order, currentUser: any, customers: any, setCustomers: any) => {
-    // Ensure Supabase succeeds before updating any local state
     await saveOrderToSupabase(newOrder, currentUser?.id || '');
 
     const updatedOrders = [newOrder, ...orders];
     setOrders(updatedOrders);
-    
-    // Actually we should saveCachedOrder inside orderService.ts which we did.
 
     const nextIngredients = await inventoryService.deductRecipeIngredients(
       newOrder,
@@ -96,8 +93,6 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
 
     setSelectedOrderForTicket(newOrder);
-
-    
     await saveCachedOrder(newOrder);
   };
 
@@ -107,14 +102,14 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const updated = products.map(p => p.id === updatedProduct.id ? updatedProduct : p);
     setProducts(updated);
     await saveCachedProduct(updatedProduct);
-    
+
     await addAuditLog(
       'Modificar Producto',
       prevPriceText,
       `Mostrador: $${updatedProduct.prices.MOSTRADOR}, Uber: $${updatedProduct.prices.UBER}, DiDi: $${updatedProduct.prices.DIDI}`,
       'Catálogo'
     );
-    
+
     await registerSyncAction('product_update', { product: updatedProduct }, async () => {
       await saveProductToSupabase(updatedProduct);
     });
@@ -152,7 +147,7 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const applyPointsToCategory = async (category: ProductCategory, points: number) => {
     const configs = getProductRewardConfigs();
-    
+
     const updatedProducts = products.map(p => {
       if (p.category === category) {
         configs[p.id] = { allowReward: true, rewardPoints: points };
@@ -174,13 +169,13 @@ export const OrderProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       'Configurar Canje Categoría',
       `Varios productos de la categoría: ${category}`,
       `Puntos aplicados: ${points} pts`,
-      `Catálogo`
+      'Catálogo'
     );
   };
 
   const resetOfficialRewards = async () => {
     const configs = getProductRewardConfigs();
-    
+
     const updatedProducts = products.map(p => {
       const points = getDefaultRewardPointsForProduct(p);
       configs[p.id] = { allowReward: true, rewardPoints: points };
