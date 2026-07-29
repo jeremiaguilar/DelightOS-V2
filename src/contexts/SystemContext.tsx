@@ -31,7 +31,7 @@ import {
   addToPendingSync
 } from '../lib/indexedDB';
 import { syncPendingQueue } from '../lib/syncService';
-import { enrichProductsWithRewards } from '../App';
+import { enrichProductsWithRewards } from '../utils/rewardConfig';
 
 interface SystemContextType {
   dbState: 'checking' | 'initialized' | 'uninitialized';
@@ -126,7 +126,7 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
         return sp;
       });
-      
+
       const enrichedLoaded = enrichProductsWithRewards(mergedProducts);
       setProducts(enrichedLoaded);
       for (const p of enrichedLoaded) {
@@ -156,13 +156,13 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setDbState('checking');
     try {
       const isDbReady = isSupabaseConfigured ? await checkSupabaseConnection() : false;
-      
+
       if (isDbReady) {
         setSupabaseActive(true);
         setSyncState('connected');
-        
+
         await reloadStateFromSupabase();
-        
+
         await syncPendingQueue((status) => {
           if (status === 'syncing') setSyncState('syncing');
           else if (status === 'synced') setSyncState('synced');
@@ -206,12 +206,12 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const triggerConnectionCheckAndSync = async () => {
     if (syncState === 'syncing') return;
-    
+
     const isDbReady = isSupabaseConfigured ? await checkSupabaseConnection() : false;
     if (isDbReady) {
       setSupabaseActive(true);
       setSyncState('connected');
-      
+
       const success = await syncPendingQueue((status) => {
         if (status === 'syncing') setSyncState('syncing');
         else if (status === 'synced') setSyncState('synced');
@@ -258,47 +258,42 @@ export const SystemProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     payload: any,
     immediateFunc: () => Promise<void>
   ) => {
-    if (isSupabaseActive) {
-      try {
+    try {
+      if (isSupabaseActive && navigator.onLine) {
         await immediateFunc();
-      } catch (e) {
-        console.warn(`Error al sincronizar de inmediato ${type}, guardando en pending_sync:`, e);
+        setSyncState('connected');
+      } else {
         await addToPendingSync(type, payload);
-        setSyncState('sync_error');
+        setSyncState('offline');
       }
-    } else {
-      console.log(`Modo sin conexión: registrando cambio de tipo ${type} en pending_sync`);
+    } catch (error) {
+      console.error('Error al registrar acción de sincronización:', error);
       await addToPendingSync(type, payload);
+      setSyncState('sync_error');
     }
   };
 
   const addAuditLog = async (
-    action: string, 
-    previousValue: string, 
-    newValue: string, 
+    action: string,
+    previousValue: string,
+    newValue: string,
     module: string,
-    overrideUser: User | null = null
+    overrideUser?: User | null
   ) => {
-    const now = new Date();
-    const activeUser = overrideUser !== null ? overrideUser : currentUser;
-    const activeUserLabel = activeUser ? `${activeUser.name} (${activeUser.role})` : 'Sistema';
-    
-    const newLog: AuditLog = {
-      id: `log-${Date.now()}-${Math.random().toString(36).substr(2, 4)}`,
-      user: activeUserLabel,
-      date: now.toISOString().split('T')[0],
-      time: now.toTimeString().split(' ')[0],
+    const log: AuditLog = {
+      id: `${Date.now()}-${Math.random()}`,
+      timestamp: new Date().toISOString(),
+      user: overrideUser || currentUser || INITIAL_USERS[0],
       action,
       previousValue,
       newValue,
       module
     };
-    
-    setAuditLogs(prev => [newLog, ...prev]);
-    await saveCachedAuditLog(newLog);
 
-    await registerSyncAction('audit_log', { log: newLog, userId: activeUser?.id }, async () => {
-      await saveAuditLogToSupabase(newLog, activeUser?.id);
+    setAuditLogs((prev) => [log, ...prev]);
+    await saveCachedAuditLog(log);
+    await registerSyncAction('audit_log', log, async () => {
+      await saveAuditLogToSupabase(log);
     });
   };
 
