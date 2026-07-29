@@ -62,7 +62,7 @@ function AppShell() {
     setProductsState,
   } = useOrderContext();
   const { activeKdsCount, updateOrderStatus } = useKDSContext();
-  const { activeRegister, isLoading: isRegisterLoading } = useCashRegisterContext();
+  const { activeRegister } = useCashRegisterContext();
 
   if (dbState === 'checking') {
     return (
